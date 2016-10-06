@@ -20,7 +20,12 @@ from simpaq.features import SoftCall
 intc = Equity(ticker='INTC')
 intc.get_stock_info('yahoo')
 
-intc_0_20190530 = ConvertibleBond(ticker='INTC 0 5/30/2019', coupon=0, maturity='5/30/2019', underlying=intc, par=1000, cr=50)
+intc_0_20190530 = ConvertibleBond(ticker='INTC 0 5/30/2019', 
+				  coupon=0, 
+				  maturity='5/30/2019', 
+				  underlying=intc, 
+				  par=1000, 
+				  cr=50)
 intc_0_20190530.add_feature(SoftCall(price=130, price_type='relative', trigger=(20, 30)))
 intc_0_20190530.add_pricer(MCConvertPricer(m=10**6))
 print intc_0_20190530.price(credit_spread=400, vol=35, dt=1/252., save=False)
