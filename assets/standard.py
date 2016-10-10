@@ -13,9 +13,6 @@ class Asset(object):
         self.pricer = None
         self.features = dict()
 
-    def set_pricer(self, pricer):
-        self.pricer = pricer
-
     def add_feature(self, feature, feature_key=None):
         if not feature_key:
             feature_key = feature.code
@@ -35,7 +32,7 @@ class Equity(Asset):
     def __repr__(self):
         return "<Equity: %s>" % self.ticker
 
-    def set_stock_info(self, source='yahoo', value_date=None, lookback=63):
+    def set_stock_data(self, source='yahoo', value_date=None, lookback=63):
         colmap = {'yahoo': 'Adj Close', 'google': 'Close'}
         if not value_date:
             value_date = datetime.datetime.today()
@@ -73,32 +70,27 @@ class Derivative(Asset):
         super(Derivative, self).__init__(ticker, name)
         self.underlying = underlying
         self.maturity_date = maturity_date
+        self.rfr = 0.01 # TODO: this needs to be handled! can go get RFR or be provided by user but needs handled.
 
     def __repr__(self):
         return "<Derivative: %s>" % self.ticker
 
-    def price(self):
-        return self.pricer.get_price(asset=self)
+    def calc_price(self, pricer, greeks=False):
+        return pricer.price(asset=self, underlying=self.underlying, rfr=self.rfr, greeks=greeks)
 
 
 class Option(Derivative):
-    def __init__(self, ticker, name, underlying, strike, maturity_date, call=True):
+    def __init__(self, ticker, name, underlying, strike, maturity_date, call=True, American=True):
         super(Option, self).__init__(ticker, name, underlying, maturity_date)
         self.call = call
         self.strike = strike
+        self.American = American
 
-    def parity(self):
+    def parity(self, price):
         if self.call:
-            return max(0, self.underlying.price - self.strike)
+            return max(0, price - self.strike)
         else:
-            return max(0, self.strike - self.underlying.price)
+            return max(0, self.strike - price)
 
     def __repr__(self):
         return "<Option: %s>" % self.ticker
-
-
-if __name__ == '__main__':
-    ibm = Equity('INTC', 'Intel Corp')
-    ibm.set_stock_info(source='yahoo')
-    print ibm.vol
-    print ibm.price
