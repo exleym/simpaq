@@ -79,6 +79,31 @@ class Derivative(Asset):
         return pricer.price(asset=self, underlying=self.underlying, rfr=self.rfr, greeks=greeks)
 
 
+class Mandatory(Derivative):
+    def __init__(self, ticker, name, underlying, par, r1, r2, maturity_date=None):
+        super(Mandatory, self).__init__(ticker, name, underlying, maturity_date)
+        self.par = par
+        self.r1 = r1
+        self.r2 = r2
+        self.k1 = par / r1
+        self.k2 = par / r2
+
+    def parity(self, price, EEPenalty=None):
+        if price < self.k2:
+            if EEPenalty:
+                return EEPenalty.parity(price)
+            return min(self.r1 * price, self.par)
+        else:
+            return self.r2 * price
+
+    def ee_parity(self, price):
+        if self.features.has_key('EEPenalty'):
+            ee_penalty = self.features['EEPenalty']
+            return self.parity(price, ee_penalty)
+        return self.parity(price)
+
+
+
 class Option(Derivative):
     def __init__(self, ticker, name, underlying, strike, maturity_date, call=True, American=True):
         super(Option, self).__init__(ticker, name, underlying, maturity_date)

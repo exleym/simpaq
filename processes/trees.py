@@ -41,19 +41,5 @@ class Tree(object):
                 else:
                     self.lattice[j, i] = self.lattice[j-1, i-1] * self.d
 
-    def backpropagate(self, asset):
-        value_tree = np.zeros(self.lattice.shape)
-        for ix in range(0, self.lattice.shape[0]):
-            value_tree[ix, -1] = asset.parity(self.lattice[ix, -1])
-        for n in range(self.lattice.shape[1]-2, -1, -1):
-            for m in range(n, -1, -1):
-                value_tree[m, n] = self._disc(value_tree[m, n+1] * self.p + value_tree[m+1, n+1] * (1 - self.p), per=1)
-                if asset.American:
-                    value_tree[m, n] = max(value_tree[m, n], asset.parity(self.lattice[m, n]))
-        return value_tree
-
-    def greeks(self, asset):
-        return None
-
     def _disc(self, value, per=1):
         return value / (1 + self.rfr)**(self.dt * per)

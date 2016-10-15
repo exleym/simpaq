@@ -32,9 +32,11 @@ class BlackScholesPricer(Pricer):
 
         # Return Call or Put Option price
         if asset.call:
-            return round(stats.norm.cdf(d1) * underlying.price - stats.norm.cdf(d2) * asset.strike * np.exp(-rfr * T), 3)
+            return round(stats.norm.cdf(d1) * underlying.price -
+                         stats.norm.cdf(d2) * asset.strike * np.exp(-rfr * T), 3)
         else:
-            return round(stats.norm.cdf(-d2) * asset.strike * np.exp(-rfr * T) - stats.norm.cdf(-d1) * underlying.price, 3)
+            return round(stats.norm.cdf(-d2) * asset.strike * np.exp(-rfr * T) -
+                         stats.norm.cdf(-d1) * underlying.price, 3)
 
     def d1(self, S, K, T, rfr, vol):
         return (1 / vol * np.sqrt(T)) * (np.log(S / K) + (rfr + 0.5 * vol**2) * T)
