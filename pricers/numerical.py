@@ -9,23 +9,25 @@ __author__ = 'exleym'
 """
 import datetime
 import numpy as np
-from ..processes import Tree
 
-class Pricer(object):
+from . import Pricer
+from ..processes import Tree, MonteCarlo
+from ..solvers import LSM
+
+class DCF(object):
     def __init__(self):
         pass
 
-    def price(self, asset, underlying, greeks, save=False):
-        """ Header / layout for primary API to the Pricer class.
-        :param asset: instance of Asset class or a derivative
-        :param underlying: instance of Asset class or a derivative
-        :param save: boolean to save calculated price
-        :return: price or (price & greeks)
-        """
-        return None
+    def price(self, value_date, cash_flows, pay_dates, discount_rate):
+        price = 0
+        for cf, dt in zip(cash_flows, pay_dates):
+            T = (dt - value_date).days / 365.25
+            price += self.discount(cf, T, discount_rate)
+        return price
 
-    def __repr__(self):
-        return "<Pricer>"
+    @staticmethod
+    def discount(cf, T, discount_rate):
+        return cf * (1 / (1 + discount_rate))**T
 
 
 class LatticeOptionPricer(Pricer):
@@ -92,12 +94,47 @@ class FDOptionPricer(Pricer):
 
 
 class MCOptionPricer(Pricer):
-    def __init__(self, n):
+    """ Monte Carlo Simulation for option pricing. Based on Longstaff-Schwartz 2001 """
+    def __init__(self, m, n=None, dt=None):
         super(MCOptionPricer, self).__init__()
+        self.m = m
+        try:
+            assert bool(dt) != bool(n)
+        except AssertionError:
+            raise KeyError('One and only one of num_steps or dt must be provided in initialization')
         self.n = n
+        self.dt = dt
 
-    def price(self, asset, underlying, greeks=True, save=False):
-        pass
+    def price(self, asset, underlying, rfr, greeks=True, save=False, valuation_date=None):
+        if not valuation_date: valuation_date = datetime.date.today()
+        T = (asset.maturity_date - valuation_date).days / 365.
+        if not self.dt:
+            dt = float(T) / self.n
+            n = self.n
+        else:
+            n = int(round(T / self.dt))
+            dt = self.dt
+        process = MonteCarlo(underlying, T, rfr, self.m, n)
+        paths = process.initialize()
+        return self.backpropagate(asset, paths, rfr, n, dt)
+
+    def backpropagate(self, asset, paths, rfr, n, dt):
+        if not asset.American:
+            x = asset.parity(paths[:,-1])
+            return self._disc(x, dt, per=self.n, rfr=rfr).mean()
+        else:
+            exercise = np.zeros(paths.shape)
+            value = np.zeros(paths.shape)
+            value[:,-1] = asset.parity(paths[:, -1])
+            lsm = LSM([lambda x: x, lambda x: x**2])
+            #for col in range(paths.shape[1]-1, -1, -1):
+            lsm.calc(value[:, -1], asset.parity(paths[:, -2]))
+            return 99
+
+    def _disc(self, value_array, dt, per=1, rfr=0):
+        disc = (1+rfr)**(dt * per)
+        return value_array / disc
+
 
 
 class LatticeMandyPricer(Pricer):

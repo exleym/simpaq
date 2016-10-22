@@ -2,7 +2,10 @@
 import datetime
 import numpy as np
 import scipy.stats as stats
-from .numerical import Pricer
+
+from . import Pricer
+from .numerical import DCF
+from ..assets.standard import Option
 
 class BlackScholesPricer(Pricer):
     def __init__(self):
@@ -43,3 +46,41 @@ class BlackScholesPricer(Pricer):
 
     def d2(self, d1, vol, T):
         return d1 - vol * np.sqrt(T)
+
+
+class BlackScholesMandyPricer(Pricer):
+    """ Prices Mandatory convertible as a basket of two options and a fixed-income cash flow """
+    def __init__(self):
+        super(BlackScholesMandyPricer, self).__init__()
+
+    def price(self, asset, underlying, rfr, spread=None, vol=None, greeks=False, save=False, valuation_date=None):
+        if not spread:
+            try:
+                assert asset.spread
+            except AssertionError:
+                raise ValueError('Must pass spread argument of type float if Mandatory.spread is undefined')
+            spread = asset.spread
+
+        if not valuation_date:
+            valuation_date = datetime.date.today()
+
+        upside_option = Option('Upside', 'Mandy Upside Option',
+                               underlying=underlying,
+                               strike=asset.k2,
+                               maturity_date=asset.maturity_date,
+                               call=True,
+                               American=False)
+        downside_option = Option('Downside', 'Mandy Downside Option',
+                                 underlying=underlying,
+                                 strike=asset.k1,
+                                 maturity_date=asset.maturity_date,
+                                 call=False,
+                                 American=False)
+
+        upside_price, upside_greeks = upside_option.calc_price(BlackScholesPricer, greeks=greeks)
+        downside_price, downside_greeks = downside_option.calc_price(BlackScholesPricer, greeks=greeks)
+        coupon_value = DCF().price(valuation_date, asset.coupons, asset.pay_dates, spread + rfr)
+        greek = None
+        if greeks:
+            greek = {}
+        return upside_price + downside_price + coupon_value + asset.par, greek

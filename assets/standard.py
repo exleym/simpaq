@@ -80,9 +80,10 @@ class Derivative(Asset):
 
 
 class Mandatory(Derivative):
-    def __init__(self, ticker, name, underlying, par, r1, r2, maturity_date=None):
+    def __init__(self, ticker, name, underlying, par, r1, r2, spread=None, maturity_date=None):
         super(Mandatory, self).__init__(ticker, name, underlying, maturity_date)
         self.par = par
+        self.spread = spread
         self.r1 = r1
         self.r2 = r2
         self.k1 = par / r1
@@ -113,9 +114,9 @@ class Option(Derivative):
 
     def parity(self, price):
         if self.call:
-            return max(0, price - self.strike)
+            return np.maximum(0, price - self.strike)
         else:
-            return max(0, self.strike - price)
+            return np.maximum(0, self.strike - price)
 
     def __repr__(self):
         return "<Option: %s>" % self.ticker
