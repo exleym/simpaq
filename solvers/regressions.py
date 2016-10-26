@@ -2,6 +2,7 @@
 import statsmodels.api as sm
 import numpy as np
 
+
 class LSM(object):
     def __init__(self, lambdas):
         self.lambdas = lambdas
@@ -12,4 +13,4 @@ class LSM(object):
             X[:, i] = self.lambdas[i](x)
 
         ols = sm.OLS(y, sm.add_constant(X, prepend=False)).fit()
-        print ols.summary()
+        return ols.params
