@@ -5,6 +5,7 @@ import pandas_datareader.data as web
 import datetime
 import numpy as np
 
+
 class Asset(object):
     def __init__(self, ticker, name):
         self.ticker = ticker
@@ -19,14 +20,14 @@ class Asset(object):
         self.features[feature_key] = feature
 
     def set_price(self, price):
-        self.price = price
+        self.price = float(price)
 
 
 class Equity(Asset):
     def __init__(self, ticker, name):
         super(Equity, self).__init__(ticker, name)
         self.vol = None
-        self.dividend = None
+        self.div = None
         self.adv = None
 
     def __repr__(self):
@@ -43,10 +44,10 @@ class Equity(Asset):
         self.price = px.at[px.index.max(), 'Close']
 
     def set_vol(self, vol):
-        self.vol = vol
+        self.vol = float(vol)
 
     def set_dividend(self, div):
-        self.div = div
+        self.div = float(div)
 
 
 class Bond(Asset):
@@ -104,12 +105,11 @@ class Mandatory(Derivative):
         return self.parity(price)
 
 
-
 class Option(Derivative):
     def __init__(self, ticker, name, underlying, strike, maturity_date, call=True, American=True):
         super(Option, self).__init__(ticker, name, underlying, maturity_date)
         self.call = call
-        self.strike = strike
+        self.strike = float(strike)
         self.American = American
 
     def parity(self, price):

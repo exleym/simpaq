@@ -1,6 +1,7 @@
 
 import numpy as np
 
+
 class Tree(object):
     def __init__(self, asset, T, rfr, num_nodes=None, dt=None):
         """ Trees are the building block for Lattice-based pricing models
@@ -29,6 +30,7 @@ class Tree(object):
         self.u = np.exp(asset.vol * np.sqrt(self.dt))
         self.d = 1 / self.u
         self.p = (np.exp(self.rfr * self.dt) - self.d) / (self.u - self.d)
+        self.lattice = None
 
     def initialize(self):
         self.lattice = np.zeros((self.num_nodes, self.num_nodes))
@@ -41,5 +43,5 @@ class Tree(object):
                 else:
                     self.lattice[j, i] = self.lattice[j-1, i-1] * self.d
 
-    def _disc(self, value, per=1):
+    def disc(self, value, per=1):
         return value / (1 + self.rfr)**(self.dt * per)

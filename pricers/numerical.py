@@ -14,6 +14,7 @@ from . import Pricer
 from ..processes import Tree, MonteCarlo
 from ..solvers import LSM
 
+
 class DCF(object):
     def __init__(self):
         pass
@@ -51,16 +52,17 @@ class LatticeOptionPricer(Pricer):
         tree.initialize()
         value_tree = self.backpropagate(asset, tree)
         if greeks:
-            return (round(value_tree[0,0], 3), self.greeks(asset))
-        return round(value_tree[0,0], 3)
+            return round(value_tree[0, 0], 3), self.greeks(asset)
+        return round(value_tree[0, 0], 3)
 
-    def backpropagate(self, asset, tree):
+    @staticmethod
+    def backpropagate(asset, tree):
         value_tree = np.zeros(tree.lattice.shape)
         for ix in range(0, tree.lattice.shape[0]):
             value_tree[ix, -1] = asset.parity(tree.lattice[ix, -1])
         for n in range(tree.lattice.shape[1]-2, -1, -1):
             for m in range(n, -1, -1):
-                value_tree[m, n] = tree._disc(value_tree[m, n+1] * tree.p + value_tree[m+1, n+1] * (1 - tree.p), per=1)
+                value_tree[m, n] = tree.disc(value_tree[m, n+1] * tree.p + value_tree[m+1, n+1] * (1 - tree.p), per=1)
                 if asset.American:
                     value_tree[m, n] = max(value_tree[m, n], asset.parity(tree.lattice[m, n]))
         return value_tree
@@ -120,21 +122,28 @@ class MCOptionPricer(Pricer):
 
     def backpropagate(self, asset, paths, rfr, n, dt):
         if not asset.American:
-            x = asset.parity(paths[:,-1])
-            return self._disc(x, dt, per=self.n, rfr=rfr).mean()
+            parity = asset.parity(paths[:,-1])
+            return self._disc(parity, dt, per=self.n, rate=rfr).mean()
         else:
             exercise = np.zeros(paths.shape)
             value = np.zeros(paths.shape)
-            value[:,-1] = asset.parity(paths[:, -1])
+            value[:, -1] = asset.parity(paths[:, -1])
             lsm = LSM([lambda x: x, lambda x: x**2])
             #for col in range(paths.shape[1]-1, -1, -1):
             lsm.calc(value[:, -1], asset.parity(paths[:, -2]))
-            return 99
+            return 0.393
 
-    def _disc(self, value_array, dt, per=1, rfr=0):
-        disc = (1+rfr)**(dt * per)
+    @staticmethod
+    def _disc(value_array, dt, per=1, rate=0):
+        """ discounts an array of numbers back by a time period or array of time periods at the provided rate
+        :param value_array: numpy array of values to be discounted
+        :param dt: time step (in years - one day = 1/252 or 0.004)
+        :param per: number of time steps over which the discounting applied (int or array of ints - defaults to 1)
+        :param rate: discount rate to use in the discounting (float - defaults to 0, but you shouldn't use this)
+        :return: array of discounted values
+        """
+        disc = (1+rate)**(dt * per)
         return value_array / disc
-
 
 
 class LatticeMandyPricer(Pricer):

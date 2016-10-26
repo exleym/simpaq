@@ -7,6 +7,7 @@ from . import Pricer
 from .numerical import DCF
 from ..assets.standard import Option
 
+
 class BlackScholesPricer(Pricer):
     def __init__(self):
         super(BlackScholesPricer, self).__init__()
