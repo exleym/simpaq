@@ -7,10 +7,10 @@ import numpy as np
 
 
 class Asset(object):
-    def __init__(self, ticker, name):
+    def __init__(self, ticker, name, price=None):
         self.ticker = ticker
         self.name = name
-        self.price = None
+        self.price = price
         self.pricer = None
         self.features = dict()
 
@@ -24,10 +24,10 @@ class Asset(object):
 
 
 class Equity(Asset):
-    def __init__(self, ticker, name):
-        super(Equity, self).__init__(ticker, name)
-        self.vol = None
-        self.div = None
+    def __init__(self, ticker, name, price=None, vol=None, div=None):
+        super(Equity, self).__init__(ticker, name, price)
+        self.vol = vol
+        self.div = div
         self.adv = None
 
     def __repr__(self):
@@ -51,13 +51,13 @@ class Equity(Asset):
 
 
 class Bond(Asset):
-    def __init__(self, ticker, name, underlying, coupon, maturity_date, frequency=None, coupon_dates=None):
+    def __init__(self, ticker, name, underlying, coupon, maturity, frequency=None, coupon_dates=None):
         super(Bond, self).__init__(ticker, name)
         self.underlying = underlying
         self.coupon = coupon
         self.frequency = frequency
         self.coupon_dates = coupon_dates
-        self.maturity_date = maturity_date
+        self.maturity = maturity
 
     def check_bond_terms(self):
         try:
@@ -67,11 +67,11 @@ class Bond(Asset):
 
 
 class Derivative(Asset):
-    def __init__(self, ticker, name, underlying, maturity_date=None):
+    def __init__(self, ticker, name, underlying, rfr, maturity=None):
         super(Derivative, self).__init__(ticker, name)
         self.underlying = underlying
-        self.maturity_date = maturity_date
-        self.rfr = 0.01 # TODO: this needs to be handled! can go get RFR or be provided by user but needs handled.
+        self.maturity = maturity
+        self.rfr = rfr
 
     def __repr__(self):
         return "<Derivative: %s>" % self.ticker
@@ -81,8 +81,8 @@ class Derivative(Asset):
 
 
 class Mandatory(Derivative):
-    def __init__(self, ticker, name, underlying, par, r1, r2, spread=None, maturity_date=None):
-        super(Mandatory, self).__init__(ticker, name, underlying, maturity_date)
+    def __init__(self, ticker, name, underlying, par, r1, r2, rfr, spread=None, maturity=None):
+        super(Mandatory, self).__init__(ticker, name, underlying, maturity, rfr)
         self.par = par
         self.spread = spread
         self.r1 = r1
@@ -106,8 +106,8 @@ class Mandatory(Derivative):
 
 
 class Option(Derivative):
-    def __init__(self, ticker, name, underlying, strike, maturity_date, call=True, American=True):
-        super(Option, self).__init__(ticker, name, underlying, maturity_date)
+    def __init__(self, ticker, name, underlying, strike, rfr, maturity, call=True, American=True):
+        super(Option, self).__init__(ticker, name, underlying, maturity=maturity, rfr=rfr)
         self.call = call
         self.strike = float(strike)
         self.American = American

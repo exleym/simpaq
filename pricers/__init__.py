@@ -17,5 +17,5 @@ class Pricer(object):
         return "<Pricer>"
 
 from .numerical import LatticeOptionPricer, MCOptionPricer
-from .analytic import BlackScholesPricer
+from .analytic import BlackScholesPricer, DCF
 

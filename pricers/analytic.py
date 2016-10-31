@@ -30,7 +30,7 @@ class BlackScholesPricer(Pricer):
         if not valuation_date: valuation_date = datetime.date.today()
 
         # Calculate time to maturity (T), d1, and d2
-        T = (asset.maturity_date - valuation_date).days / 365.
+        T = (asset.maturity - valuation_date).days / 365.
         d1 = self.d1(underlying.price, asset.strike, T, rfr, vol)
         d2 = self.d2(d1, vol, T)
 
@@ -68,13 +68,15 @@ class BlackScholesMandyPricer(Pricer):
         upside_option = Option('Upside', 'Mandy Upside Option',
                                underlying=underlying,
                                strike=asset.k2,
-                               maturity_date=asset.maturity_date,
+                               rfr=rfr,
+                               maturity=asset.maturity,
                                call=True,
                                American=False)
         downside_option = Option('Downside', 'Mandy Downside Option',
                                  underlying=underlying,
                                  strike=asset.k1,
-                                 maturity_date=asset.maturity_date,
+                                 rfr=rfr,
+                                 maturity=asset.maturity,
                                  call=False,
                                  American=False)
 
