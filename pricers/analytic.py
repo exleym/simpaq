@@ -43,7 +43,7 @@ class BlackScholesPricer(Pricer):
                          stats.norm.cdf(-d1) * underlying.price, 3)
 
     def d1(self, S, K, T, rfr, vol):
-        return (1 / vol * np.sqrt(T)) * (np.log(S / K) + (rfr + 0.5 * vol**2) * T)
+        return (1 / (vol * np.sqrt(T))) * (np.log(S / K) + (rfr + 0.5 * vol**2) * T)
 
     def d2(self, d1, vol, T):
         return d1 - vol * np.sqrt(T)
@@ -75,7 +75,6 @@ class BlackScholesMandyPricer(Pricer):
         downside_option = Option('Downside', 'Mandy Downside Option',
                                  underlying=underlying,
                                  strike=asset.k1,
-                                 rfr=rfr,
                                  maturity=asset.maturity,
                                  call=False,
                                  American=False)

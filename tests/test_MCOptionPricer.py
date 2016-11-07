@@ -7,37 +7,29 @@ from simpaq.pricers import BlackScholesPricer, MCOptionPricer, LatticeOptionPric
 
 class TestMCOptionPricer(unittest.TestCase):
 
+    def setUp(self):
+        self.underlying = Equity(ticker='AAA', name='TestAAA', price=10, vol=0.25, div=0.)
+        self.valuation_date = datetime.date.today()
+        self.maturity = self.valuation_date + datetime.timedelta(days=365)
+        self.call_eur = Option(ticker='AAA C12', name='TestOption', underlying=self.underlying, strike=12, rfr=0.01,
+                               maturity=self.maturity, call=True, American=False)
+        self.call_amer = Option(ticker='BBB C12', name='TestOption', underlying=self.underlying, strike=12, rfr=0.01,
+                                maturity=self.maturity, call=True, American=True)
+
     def test_european_options(self):
-        underlying = Equity(ticker='AAA', name='TestAAA')
-        underlying.set_price(10)
-        underlying.set_vol(0.25)
-        underlying.set_dividend(0)
-        valuation_date = datetime.date.today()
-        maturity = valuation_date + datetime.timedelta(days=365)
-        option = Option(ticker='AAA C12', name='TestOption', underlying=underlying, strike=12, maturity_date=maturity,
-                        call=True, American=False)
+        """ Lattice and MC return same price for European Call """
         bspricer = BlackScholesPricer()
-        mcpricer = MCOptionPricer(m=500000, n=252)
-
-        bsprice = option.calc_price(bspricer)
-        mcprice = option.calc_price(mcpricer)
-
+        mcpricer = MCOptionPricer(m=500000, n=2)
+        bsprice = self.call_eur.calc_price(bspricer)
+        mcprice = self.call_eur.calc_price(mcpricer)
         self.assertAlmostEqual(bsprice, mcprice, 2)
 
     def test_american_options(self):
-        underlying = Equity(ticker='BBB', name='TestBBB')
-        underlying.set_price(10)
-        underlying.set_vol(0.25)
-        underlying.set_dividend(0)
-        valuation_date = datetime.date.today()
-        maturity = valuation_date + datetime.timedelta(days=365)
-        option = Option(ticker='BBB C12', name='TestOption', underlying=underlying, strike=12, maturity_date=maturity,
-                        call=True, American=True)
+        """ Lattice and MC return same price for American Call """
         latticepricer = LatticeOptionPricer(n=252)
         mcpricer = MCOptionPricer(m=500000, n=252)
-        lprice = option.calc_price(latticepricer)
-        mcprice = option.calc_price(mcpricer)
-
+        lprice = self.call_amer.calc_price(latticepricer)
+        mcprice = self.call_amer.calc_price(mcpricer)
         self.assertAlmostEqual(lprice, mcprice, 2)
 
 if __name__ == '__main__':

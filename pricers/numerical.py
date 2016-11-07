@@ -47,7 +47,7 @@ class LatticeOptionPricer(Pricer):
         :return: price or (price & greeks)
         """
         if not valuation_date: valuation_date = datetime.date.today()
-        T = (asset.maturity_date - valuation_date).days / 365.
+        T = (asset.maturity - valuation_date).days / 365.
         tree = Tree(underlying, T=T,num_nodes=self.n, rfr=rfr)
         tree.initialize()
         value_tree = self.backpropagate(asset, tree)
@@ -108,8 +108,19 @@ class MCOptionPricer(Pricer):
         self.dt = dt
 
     def price(self, asset, underlying, rfr, greeks=True, save=False, valuation_date=None):
+        """ Calculate price subject to early exercise boundary (for American options, only) - This model uses a
+        Longstaff-Schwartz-style least-squares regression model to estimate continuation value @ points in which
+        early-exercise is allowed.
+        :param asset: 
+        :param underlying:
+        :param rfr:
+        :param greeks:
+        :param save:
+        :param valuation_date:
+        :return:
+        """
         if not valuation_date: valuation_date = datetime.date.today()
-        T = (asset.maturity_date - valuation_date).days / 365.
+        T = (asset.maturity - valuation_date).days / 365.
         if not self.dt:
             dt = float(T) / self.n
             n = self.n
@@ -121,17 +132,31 @@ class MCOptionPricer(Pricer):
         return self.backpropagate(asset, paths, rfr, n, dt)
 
     def backpropagate(self, asset, paths, rfr, n, dt):
-        if not asset.American:
-            parity = asset.parity(paths[:,-1])
-            return self._disc(parity, dt, per=self.n, rate=rfr).mean()
-        else:
-            exercise = np.zeros(paths.shape)
-            value = np.zeros(paths.shape)
-            value[:, -1] = asset.parity(paths[:, -1])
-            lsm = LSM([lambda x: x, lambda x: x**2])
-            #for col in range(paths.shape[1]-1, -1, -1):
-            lsm.calc(value[:, -1], asset.parity(paths[:, -2]))
-            return 0.393
+        """
+            Uses the least-squares method described in Longstaff-Schwartz [2001] to determine early exercise conditions
+            for in-the-money paths of the Monte Carlo process.
+        """
+        parity = np.zeros(paths.shape)
+        value = np.zeros(paths.shape)
+        parity[:,-1] = asset.parity(paths[:, -1])
+        value[:, -1] = parity[:, -1]
+        lsm = LSM([lambda x: x, lambda x: x**2, lambda x: x**3])
+
+        for col in range(paths.shape[1]-2, -1, -1):
+            if not asset.American:
+                return round(self._disc(parity[:,-1], dt, per=self.n, rate=rfr).mean(),3)
+            else:
+                parity[:, col] = asset.parity(paths[:, col])
+                itm = parity[:, col] > 0
+                y = parity[itm, -1]
+                x = parity[itm, col]
+                params = lsm.calc(y, x)
+                y_hat = np.ones(parity[:,0].shape) * params[-1]
+                for ix in range(len(params)-2, -1, -1):
+                    y_hat += params[ix] * parity[:,col]
+                value[:,0] = self._disc(parity[:,-1], dt, per=1, rate=rfr)
+                value[itm, 0] = np.maximum(self._disc(y_hat[itm], dt, per=1,rate=rfr), parity[itm, col])
+                return round(value[:,0].mean(),3)
 
     @staticmethod
     def _disc(value_array, dt, per=1, rate=0):

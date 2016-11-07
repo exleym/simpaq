@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 class MonteCarlo(object):
     """ Monte Carlo simulation - this class generates an m*n matrix following a GBM process """
-    def __init__(self, asset, T, rfr, num_paths, num_steps=None, dt=None):
+    def __init__(self, asset, T, rfr, num_paths, num_steps=None, dt=None, antithetic=False):
         """ MonteCarlo simulations are the building block of path-dependent pricers and are based on a GBM stochastic
         process.
         :param asset: The underlying asset whose process is being simulated
@@ -14,12 +14,14 @@ class MonteCarlo(object):
         :param num_paths: number of paths to simulate
         :param num_steps: Optional (xor with dt) number of nodes to fit between now and T
         :param dt: Optional (xor with num_nodes) time-step between nodes
+        :param antithetic: value of True pairs each path with its antithetic path improving convergence
         :return: None
         """
         self.asset = asset
         self.T = T
         self.num_paths = num_paths
         self.rfr = rfr
+        self.antithetic = antithetic
 
         try:
             assert bool(dt) != bool(num_steps)
@@ -35,6 +37,8 @@ class MonteCarlo(object):
 
     def initialize(self):
         randoms = np.random.randn(self.num_paths, self.num_steps)
+        if self.antithetic:
+            randoms = np.vstack([randoms, -1*randoms])
         q = self.asset.div
         sims = np.exp((self.rfr - q - 0.5 * self.asset.vol**2)*self.dt + self.asset.vol*np.sqrt(self.dt)*randoms)
         sims = self.asset.price * np.cumprod(sims, axis=1)
