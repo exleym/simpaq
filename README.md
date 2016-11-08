@@ -115,12 +115,12 @@ access to these models through our API. See the [API Documentation](#) for more
 details on interacting with the web service. This is a "down-the-road" todo, though, and
 
 Access to the `simpaq` web service is free after registering for a token, 
-subject to the following constraints:
-1. We will not provide inputs or security terms, just models
+subject to the following constraints:  
+1. We will not provide inputs or security terms, just models  
 2. Calls to value securities with resource-intensive `Pricer` models will 
-    be throttled to keep us from burning though our budget.
+    be throttled to keep us from burning though our budget.  
 3. This service is provided under the [MIT License](./LICENSE), and thus is 
-    provided "as is", without warranty of any kind.
+    provided "as is", without warranty of any kind.  
 
 # SQLAlchemy
 Additionally, this package contains a set of SQLAlchemy classes that can be mapped to a relational database and used to 
