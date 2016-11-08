@@ -58,6 +58,8 @@ with value, greeks, and model parameters.
  3. [Examples](#examples)
  4. [WebService](#web-service)
  5. [SQLAlchemy Integration](#sqlalchemy)
+ 6. [Contact](#contact)
+ 7. [References](#references)
 
 
 # Summary
@@ -95,15 +97,15 @@ respective APIs can be found in the [Features](./documentation/features.md) page
 Long story short, pricers are the guts of this operation. Ranging from simple BlackScholes option pricers that can only 
 handle a simple European option, to MonteCarlo simulations capable of pricing complex Options or ConvertibleBonds with 
 path-dependent features. The following pricers are currently supported by this package: 
- * BlackScholesPricer  
- * BlackScholesMandyPricer  
- * LatticeOptionPricer  
- * FDOptionPricer  
- * MCOptionPricer  
+ * [BlackScholesPricer](./pricers/analytic.py#BlackScholes)    
+ * [BlackScholesMandyPricer](./pricers/analytic.py#BlackScholesManyPricer)
+ * [LatticeOptionPricer](./pricers/numerical.py#LatticeOptionPricer)  
+ * [FDOptionPricer](./pricers/numerical.py#FDOptionPricer)  
+ * [MCOptionPricer](./pricers/numerical.py#MCOptionPricer)  
+
 These pricers (especially the MonteCarlo pricers) support a variety of assets, and should be passed into the 
 `calc_price()` methods of each an asset. A list of assets and their supported pricers can be found in the 
 [Assets](./documentation/assets.md) documentation.  
-
 
 # Examples
 
@@ -122,4 +124,26 @@ subject to the following constraints:
 
 # SQLAlchemy
 Additionally, this package contains a set of SQLAlchemy classes that can be mapped to a relational database and used to 
-are SQLAlchemy classes that correspond to 
+are SQLAlchemy classes that correspond to each of the major models. The point of this is to allow Asset classes to be 
+drawn from a database by their ticker, name, etc, without requiring the user to input all features of a security every 
+time they are to be used.
+
+This is a lower priority on the TODO list, so hopefully it can get implemented sometime in the near future.
+
+# Contact  
+If you have problems, questions, ideas or suggestions, please contact us @ exleym@gmail.com for now, or later at a 
+better contact address. In a perfect world, this project will pick up enough steam to get a silly little website of its 
+own, in which case, you can definitely leave messages there.
+
+# References  
+This project would never have even begun without the following brilliant reference material. Some of these models are 
+directly replicated here, while others were a starting point or a learning tool for the development of the 
+models shown here. In all cases, much thanks, and all the credit goes to the mathmaticians, physicists, and all-around 
+smart people that came up with these models. We engineers are keen to enjoy the usefulness of your models without ever 
+contributing to the frontier of knowledge. We hope these implementations can, in some small way, help with the 
+continuation of knowledge in this sphere.
+
+1. [Hull, John. *Options, Futures, and Other Derivatives*. Pearson, 2016](https://amzn.com/0133456315)
+2. Longstaff, Francis; Schwartz, Eduardo. "Valuing American Options by Simulation: A Simple Least-Squares Approach. 
+*The Review of Financial Studies*, Spring 2001, Vol. 14. No. 1, pp. 113-147;
+3. [Lvov; Yigitbasioglu; Bachir; "Pricing Convertible Bonds by Simulation"](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=950213)
