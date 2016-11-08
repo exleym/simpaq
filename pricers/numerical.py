@@ -135,10 +135,15 @@ class MCOptionPricer(Pricer):
         """
             Uses the least-squares method described in Longstaff-Schwartz [2001] to determine early exercise conditions
             for in-the-money paths of the Monte Carlo process.
+        :param asset: Asset instance (should be a Derivative)
+        :param paths: integer representing m paths
+        :param rfr: risk-free rate
+        :param n: number of steps being simulated
+        :param dt: duration of a "time-step"
         """
         parity = np.zeros(paths.shape)
         value = np.zeros(paths.shape)
-        parity[:,-1] = asset.parity(paths[:, -1])
+        parity[:, -1] = asset.parity(paths[:, -1])
         value[:, -1] = parity[:, -1]
         lsm = LSM([lambda x: x, lambda x: x**2, lambda x: x**3])
 
@@ -192,13 +197,13 @@ class LatticeMandyPricer(Pricer):
         tree.initialize()
         value_tree = self.backpropagate(asset, tree)
         if greeks:
-            return (round(value_tree[0,0], 3), self.greeks(asset))
-        return round(value_tree[0,0], 3)
+            return round(value_tree[0, 0], 3), self.greeks(asset)
+        return round(value_tree[0, 0], 3)
 
     def backpropagate(self, asset, tree):
         value_tree = np.zeros(tree.lattice.shape)
-        #TODO: does final coupon usually pay on maturity date at the same time conversion happens?
-        #TODO (cont): if so, this needs to handle final coupon @ last node.
+        # TODO: does final coupon usually pay on maturity date at the same time conversion happens?
+        # TODO (cont): if so, this needs to handle final coupon @ last node.
         for ix in range(0, tree.lattice.shape[0]):
             value_tree[ix, -1] = asset.parity(tree.lattice[ix, -1])
 
